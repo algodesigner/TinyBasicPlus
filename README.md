@@ -174,19 +174,17 @@ List both, and run
 ## Current
 - Arduino - ATMega 168 (~100 bytes available)
 - Arduino - ATMega 368 (~1100 bytes available)
+- Arduino Nano Every
 - SD cards (via SD Library, for FILES, LOAD, SAVE commands, uses 9k of ROM)
 - EEProm (via EEProm Library, uses 500 bytes of ROM)
 - Serial IO - command console
+- PS2 Keyboard for standalone use
 
 ## Future
-- PS2 Keyboard for standalone use (maybe)
 - Graphics support via common function names and ANSI/ReGIS escape codes
 
-
 # Known Quirks and Limitations
-- If LOAD or SAVE are called, FILES fails subsequent listings
 - SD cards are not hot-swappable. A reset is required between swaps.
-
 
 # Authors and Contributors
 
