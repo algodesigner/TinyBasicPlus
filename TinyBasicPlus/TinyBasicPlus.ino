@@ -12,7 +12,7 @@
 //      Keyboard Data to Arduino pin 8;
 //      Keyboard IRQ (clock) to Arduino pin 3;
 
-#define kVersion "v0.14"
+#define kVersion "v0.14a"
 
 // v0.14: 2013-11-07
 //      Input command always set the variable to 99
@@ -279,6 +279,7 @@ static unsigned char outStream = kStreamSerial;
 #define CTRLH	0x08
 #define CTRLS	0x13
 #define CTRLX	0x18
+#define DEL 0x7F
 
 typedef short unsigned LINENUM;
 #ifdef ARDUINO
@@ -675,11 +676,12 @@ static void getln(char prompt)
       txtpos[0] = NL;
       return;
     case CTRLH:
-      if(txtpos == program_end)
+    case DEL:
+      if(txtpos == program_end + sizeof(LINENUM))
         break;
       txtpos--;
 
-      printmsg(backspacemsg);
+      printmsgNoNL(backspacemsg);
       break;
     default:
       // We need to leave at least one space to allow us to shuffle the line into order
@@ -961,8 +963,8 @@ static short int expression(void)
 /***************************************************************************/
 void loop()
 {
-  Serial.println("with MRETV composit video output"); 
-  Serial.println("Version beta 1.0"); 
+  Serial.println("MRETV composite video output"); 
+  Serial.println("Version beta 1.0a"); 
   unsigned char *start;
   unsigned char *newEnd;
   unsigned char linelen;
