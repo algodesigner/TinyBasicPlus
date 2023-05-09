@@ -169,8 +169,8 @@ char eliminateCompileErrors = 1;  // fix to suppress arduino build errors
 
 // this is the alternate autorun.  Autorun the program in the eeprom.
 // it will load whatever is in the EEProm and run it
-#define ENABLE_EAUTORUN 1
-//#undef ENABLE_EAUTORUN
+//define ENABLE_EAUTORUN 1
+#undef ENABLE_EAUTORUN
 
 // this will enable the "TONE", "NOTONE" command using a piezo
 // element on the specified pin.  Wire the red/positive/piezo to the kPiezoPin,
@@ -188,8 +188,8 @@ char eliminateCompileErrors = 1;  // fix to suppress arduino build errors
 //#undef ENABLE_EEPROM
 
 // This turns on the PS/2 Keyboard support
-//#define ENABLE_PS2KEYBOARD 1
-#undef ENABLE_PS2KEYBOARD
+#define ENABLE_PS2KEYBOARD 1
+//#undef ENABLE_PS2KEYBOARD
 
 // Sometimes, we connect with a slower device as the console.
 // Set your console D0/D1 baud rate here (9600 baud default)
@@ -539,9 +539,6 @@ static const unsigned char backspacemsg[]     PROGMEM = "\b \b";
 static const unsigned char indentmsg[]        PROGMEM = "    ";
 static const unsigned char sderrormsg[]       PROGMEM = "SD card error.";
 static const unsigned char sdfilemsg[]        PROGMEM = "SD file error.";
-static const unsigned char dirextmsg[]        PROGMEM = "(dir)";
-static const unsigned char slashmsg[]         PROGMEM = "/";
-static const unsigned char spacemsg[]         PROGMEM = " ";
 
 static int inchar(void);
 static void outchar(unsigned char c);
@@ -1811,7 +1808,6 @@ dwrite:
 files:
   // display a listing of files on the device.
   // version 1: no support for subdirectories
-
 #ifdef ENABLE_FILEIO
     cmd_Files();
   goto warmstart;
@@ -2218,38 +2214,33 @@ static int initSD( void )
 #endif
 
 #if ENABLE_FILEIO
+
+void outstr(const char *s) {
+  for(; *s; outchar(*s++));
+}
+
 void cmd_Files( void )
 {
   File dir = SD.open( "/" );
   dir.seek(0);
-
-  while( true ) {
+  for(;;) {
     File entry = dir.openNextFile();
-    if( !entry ) {
+    if (!entry) {
       entry.close();
       break;
     }
-
-    // common header
-    printmsgNoNL( indentmsg );
-    printmsgNoNL( (const unsigned char *)entry.name() );
-    if( entry.isDirectory() ) {
-      printmsgNoNL( slashmsg );
-    }
-
-    if( entry.isDirectory() ) {
-      // directory ending
-      for( int i=strlen( entry.name()) ; i<16 ; i++ ) {
-        printmsgNoNL( spacemsg );
-      }
-      printmsgNoNL( dirextmsg );
+    outstr(entry.name());
+    if (entry.isDirectory()) {
+      outchar('/');
+      for(int i = strlen(entry.name()) ; i < 16 ; i++)
+        outchar(' ');
+      outstr("(dir)");
     }
     else {
       // file ending
-      for( int i=strlen( entry.name()) ; i<17 ; i++ ) {
-        printmsgNoNL( spacemsg );
-      }
-      printUnum( entry.size() );
+      for(int i = strlen(entry.name()) ; i < 17 ; i++)
+        outchar(' ');
+      printUnum(entry.size());
     }
     line_terminator();
     entry.close();
