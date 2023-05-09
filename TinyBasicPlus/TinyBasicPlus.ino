@@ -105,8 +105,8 @@ char eliminateCompileErrors = 1;  // fix to suppress arduino build errors
 
 // This enables LOAD, SAVE, FILES commands through the Arduino SD Library
 // it adds 9k of usage as well.
-//#define ENABLE_FILEIO 1
-#undef ENABLE_FILEIO
+#define ENABLE_FILEIO 1
+//#undef ENABLE_FILEIO
 
 // this turns on "autorun".  if there's FileIO, and a file "autorun.bas",
 // then it will load it and run it when starting up
@@ -124,8 +124,8 @@ char eliminateCompileErrors = 1;  // fix to suppress arduino build errors
 // element on the specified pin.  Wire the red/positive/piezo to the kPiezoPin,
 // and the black/negative/metal disc to ground.
 // it adds 1.5k of usage as well.
-//#define ENABLE_TONES 1
-#undef ENABLE_TONES
+#define ENABLE_TONES 1
+//#undef ENABLE_TONES
 #define kPiezoPin 5
 
 // we can use the EEProm to store a program during powerdown.  This is 
@@ -142,6 +142,14 @@ char eliminateCompileErrors = 1;  // fix to suppress arduino build errors
 
 ////////////////////////////////////////////////////////////////////////////////
 #ifdef ARDUINO
+
+#ifdef ARDUINO_AVR_NANO_EVERY
+  #define RAMEND (5120-1)
+  #if ENABLE_EEPROM
+    #define E2END (256 - 1)
+  #endif
+#endif
+
 #ifndef RAMEND
 // okay, this is a hack for now
 // if we're in here, we're a DUE probably (ARM instead of AVR)
@@ -171,7 +179,7 @@ const int DataPin = 8;
 const int IRQpin =  3;
 PS2Keyboard keyboard;
 //-------------------------------------------------------------------------------------------------------------------------------------------------------
-  
+
   
 
 #ifdef ENABLE_FILEIO
@@ -965,6 +973,9 @@ void loop()
 {
   Serial.println("MRETV composite video output"); 
   Serial.println("Version beta 1.0a"); 
+  Serial1.println("MRETV composite video output"); 
+  Serial1.println("Version beta 1.0a"); 
+
   unsigned char *start;
   unsigned char *newEnd;
   unsigned char linelen;
@@ -1960,12 +1971,14 @@ void setup()
 {
 #ifdef ARDUINO
   Serial.begin(kConsoleBaud);	// opens serial port
+  Serial1.begin(kConsoleBaud);
   while( !Serial ); // for Leonardo
   
   keyboard.begin(DataPin, IRQpin); //----------------------------------------------------------------------------------------------------------------
   //Serial.println("Keyboard Test:");
   
   Serial.println( sentinel );
+  Serial1.println(sentinel);
   printmsg(initmsg);
 
 #ifdef ENABLE_FILEIO
@@ -2116,6 +2129,7 @@ static void outchar(unsigned char c)
   #endif /* ENABLE_EEPROM */
   #endif /* ARDUINO */
     Serial.write(c);
+    Serial1.write(c);
 
 #else
   putchar(c);
