@@ -1,18 +1,65 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TinyBasic Plus + PS2 keyboard 
+// TinyBasic Plus
 ////////////////////////////////////////////////////////////////////////////////
 //
-// Authors: Mike Field <hamster@snap.net.nz>
-//	    Scott Lawrence <yorgle@gmail.com>
-//          Brian O'Dell <megamemnon@megamemnon.com>
+// Authors: 
+//    Gordon Brandly (Tiny Basic for 68000)
+//    Mike Field <hamster@snap.net.nz> (Arduino Basic) (port to Arduino)
+//    Scott Lawrence <yorgle@gmail.com> (TinyBasic Plus) (features, etc)
 //
+// Contributors:
+//          Brian O'Dell <megamemnon@megamemnon.com> (INPUT)
+//    (full list tbd)
+
+//  For full history of Tiny Basic, please see the wikipedia entry here:
+//    https://en.wikipedia.org/wiki/Tiny_BASIC
+
+// LICENSING NOTES:
+//    Mike Field based his C port of Tiny Basic on the 68000 
+//    Tiny BASIC which carried the following license:
+/*
+******************************************************************
+*                                                                *
+*               Tiny BASIC for the Motorola MC68000              *
+*                                                                *
+* Derived from Palo Alto Tiny BASIC as published in the May 1976 *
+* issue of Dr. Dobb's Journal.  Adapted to the 68000 by:         *
+*       Gordon Brandly                                           *
+*       12147 - 51 Street                                        *
+*       Edmonton AB  T5W 3G8                                     *
+*       Canada                                                   *
+*       (updated mailing address for 1996)                       *
+*                                                                *
+* This version is for MEX68KECB Educational Computer Board I/O.  *
+*                                                                *
+******************************************************************
+*    Copyright (C) 1984 by Gordon Brandly. This program may be   *
+*    freely distributed for personal use only. All commercial    *
+*                      rights are reserved.                      *
+*/
+//    ref: http://members.shaw.ca:80/gbrandly/68ktinyb.html
+//
+//    However, Mike did not include a license of his own for his
+//    version of this.  
+//    ref: http://hamsterworks.co.nz/mediawiki/index.php/Arduino_Basic
+//
+//    From discussions with him, I felt that the MIT license is
+//    the most applicable to his intent.
+//
+//    I am in the process of further determining what should be
+//    done wrt licensing further.  This entire header will likely
+//    change with the next version 0.16, which will hopefully nail
+//    down the whole thing so we can get back to implementing
+//    features instead of licenses.  Thank you for your time.
+
+////////////////////////////////////////////////////////////////////////////////
 // Introduction of PS2 keyboard, December 2017.  
 //      Author: Rob Cai <rocaj74@gmail.com> 
 //      Connections: 
 //      Keyboard Data to Arduino pin 8;
 //      Keyboard IRQ (clock) to Arduino pin 3;
 
-#define kVersion "v0.14a"
+#define kVersion "v0.15a"
 
 // v0.14: 2013-11-07
 //      Input command always set the variable to 99
