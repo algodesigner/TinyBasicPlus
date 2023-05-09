@@ -1,69 +1,23 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TinyBasic Plus
+// TinyBasic Plus + PS2 keyboard 
 ////////////////////////////////////////////////////////////////////////////////
 //
-// Authors: 
-//    Gordon Brandly (Tiny Basic for 68000)
-//    Mike Field <hamster@snap.net.nz> (Arduino Basic) (port to Arduino)
-//    Scott Lawrence <yorgle@gmail.com> (TinyBasic Plus) (features, etc)
+// Authors: Mike Field <hamster@snap.net.nz>
+//	    Scott Lawrence <yorgle@gmail.com>
+//          Brian O'Dell <megamemnon@megamemnon.com>
 //
-// Contributors:
-//          Brian O'Dell <megamemnon@megamemnon.com> (INPUT)
-//    (full list tbd)
+// Introduction of PS2 keyboard, December 2017.  
+//      Author: Rob Cai <rocaj74@gmail.com> 
+//      Connections: 
+//      Keyboard Data to Arduino pin 8;
+//      Keyboard IRQ (clock) to Arduino pin 3;
 
-//  For full history of Tiny Basic, please see the wikipedia entry here:
-//    https://en.wikipedia.org/wiki/Tiny_BASIC
-
-// LICENSING NOTES:
-//    Mike Field based his C port of Tiny Basic on the 68000 
-//    Tiny BASIC which carried the following license:
-/*
-******************************************************************
-*                                                                *
-*               Tiny BASIC for the Motorola MC68000              *
-*                                                                *
-* Derived from Palo Alto Tiny BASIC as published in the May 1976 *
-* issue of Dr. Dobb's Journal.  Adapted to the 68000 by:         *
-*       Gordon Brandly                                           *
-*       12147 - 51 Street                                        *
-*       Edmonton AB  T5W 3G8                                     *
-*       Canada                                                   *
-*       (updated mailing address for 1996)                       *
-*                                                                *
-* This version is for MEX68KECB Educational Computer Board I/O.  *
-*                                                                *
-******************************************************************
-*    Copyright (C) 1984 by Gordon Brandly. This program may be   *
-*    freely distributed for personal use only. All commercial    *
-*                      rights are reserved.                      *
-******************************************************************
-*/
-//    ref: http://members.shaw.ca:80/gbrandly/68ktinyb.html
-//
-//    However, Mike did not include a license of his own for his
-//    version of this.  
-//    ref: http://hamsterworks.co.nz/mediawiki/index.php/Arduino_Basic
-//
-//    From discussions with him, I felt that the MIT license is
-//    the most applicable to his intent.
-//
-//    I am in the process of further determining what should be
-//    done wrt licensing further.  This entire header will likely
-//    change with the next version 0.16, which will hopefully nail
-//    down the whole thing so we can get back to implementing
-//    features instead of licenses.  Thank you for your time.
-
-#define kVersion "v0.15"
-
-// v0.15: 2018-06-23
-//      Integrating some contributions
-//      Corrected some of the #ifdef nesting atop this page
-//      Licensing issues beginning to be addressed
+#define kVersion "v0.14"
 
 // v0.14: 2013-11-07
+//      Input command always set the variable to 99
 //      Modified Input command to accept an expression using getn()
 //      Syntax is "input x" where x is any variable
-//      NOTE: This only works for numbers, expressions. not strings.
 //
 // v0.13: 2013-03-04
 //      Support for Arduino 1.5 (SPI.h included, additional changes for DUE support)
@@ -129,8 +83,11 @@
 // 	Quirk:  "10 LET A=B+C" is ok "10 LET A = B + C" is not.
 // 	Quirk:  INPUT seems broken?
 
+
+
 // IF testing with Visual C, this needs to be the first thing in the file.
 //#include "stdafx.h"
+
 
 char eliminateCompileErrors = 1;  // fix to suppress arduino build errors
 
@@ -180,147 +137,119 @@ char eliminateCompileErrors = 1;  // fix to suppress arduino build errors
 
 // Sometimes, we connect with a slower device as the console.
 // Set your console D0/D1 baud rate here (9600 baud default)
-#define kConsoleBaud 9600
-
+//#define kConsoleBaud 9600
+#define kConsoleBaud 2400 //-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 ////////////////////////////////////////////////////////////////////////////////
-// fixes for RAMEND on some platforms
+#ifdef ARDUINO
 #ifndef RAMEND
-  // RAMEND is defined for Uno type Arduinos
-  #ifdef ARDUINO
-    // probably DUE or 8266?
-    #ifdef ESP8266
-      #define RAMEND (8192-1)
-    #else
-      // probably DUE - ARM rather than AVR
-      #define RAMEND (4096-1)
-    #endif
-  #endif
-#endif
+// okay, this is a hack for now
+// if we're in here, we're a DUE probably (ARM instead of AVR)
 
+#define RAMEND 4096-1
 
-// Enable memory alignment for certain processers (e.g. some ESP8266-based devices)
-#ifdef ESP8266
-  // Uses up to one extra byte per program line of memory
-  #define ALIGN_MEMORY 1
+// turn off EEProm
+#undef ENABLE_EEPROM
+#undef ENABLE_TONES
+
 #else
-  #undef ALIGN_MEMORY
+// we're an AVR!
+
+// we're moving our data strings into progmem
+#include <avr/pgmspace.h>
 #endif
+
+// includes, and settings for Arduino-specific functionality
+#ifdef ENABLE_EEPROM
+#include <EEPROM.h>  /* NOTE: case sensitive */
+int eepos = 0;
+#endif
+
+//---------------------------------------------------------------------------------------------------------------------------------------------------
+#include <PS2Keyboard.h>
+const int DataPin = 8;
+const int IRQpin =  3;
+PS2Keyboard keyboard;
+//-------------------------------------------------------------------------------------------------------------------------------------------------------
+  
+  
+
+#ifdef ENABLE_FILEIO
+#include <SD.h>
+#include <SPI.h> /* needed as of 1.5 beta */
+
+// Arduino-specific configuration
+// set this to the card select for your SD shield
+#define kSD_CS 10
+
+#define kSD_Fail  0
+#define kSD_OK    1
+
+File fp;
+#endif
+
+// set up our RAM buffer size for program and user input
+// NOTE: This number will have to change if you include other libraries.
+#ifdef ARDUINO
+#ifdef ENABLE_FILEIO
+#define kRamFileIO (1030) /* approximate */
+#else
+#define kRamFileIO (0)
+#endif
+#ifdef ENABLE_TONES
+#define kRamTones (40)
+#else
+#define kRamTones (0)
+#endif
+#endif /* ARDUINO */
+#define kRamSize  (RAMEND - 1160 - kRamFileIO - kRamTones) 
 
 #ifndef ARDUINO
-  // not an arduino, so we can disable these features.
-  // turn off EEProm
-  #undef ENABLE_EEPROM
-  #undef ENABLE_TONES
+// Not arduino setup
+#include <stdio.h>
+#include <stdlib.h>
+#undef ENABLE_TONES
+
+// size of our program ram
+#define kRamSize   4096 /* arbitrary */
+
+#ifdef ENABLE_FILEIO
+FILE * fp;
+#endif
 #endif
 
-
-// includes, and settings for Arduino-specific features
-#ifdef ARDUINO
-
-  // EEPROM
-  #ifdef ENABLE_EEPROM
-    #include <EEPROM.h>  /* NOTE: case sensitive */
-    int eepos = 0;
-  #endif
-
-  // SD card File io
-  #ifdef ENABLE_FILEIO
-    #include <SD.h>
-    #include <SPI.h> /* needed as of 1.5 beta */
-
-    // set this to the card select for your Arduino SD shield
-    #define kSD_CS 10
-
-    #define kSD_Fail  0
-    #define kSD_OK    1
-
-    File fp;
-  #endif
-
-  // set up our RAM buffer size for program and user input
-  // NOTE: This number will have to change if you include other libraries.
-  //       It is also an estimation.  Might require adjustments...
-  #ifdef ENABLE_FILEIO
-    #define kRamFileIO (1030) /* approximate */
-  #else
-    #define kRamFileIO (0)
-  #endif
-
-  #ifdef ENABLE_TONES
-    #define kRamTones (40)
-  #else
-    #define kRamTones (0)
-  #endif
-
-  #define kRamSize  (RAMEND - 1160 - kRamFileIO - kRamTones) 
-
-#endif /* ARDUINO Specifics */
-
-
-// set up file includes for things we need, or desktop specific stuff.
-
-#ifdef ARDUINO
-  // Use pgmspace/PROGMEM directive to store strings in progmem to save RAM
-  #include <avr/pgmspace.h>
-#else
-  #include <stdio.h>
-  #include <stdlib.h>
-  #undef ENABLE_TONES
-
-  // size of our program ram
-  #define kRamSize   64*1024 /* arbitrary - not dependant on libraries */
-
-  #ifdef ENABLE_FILEIO
-    FILE * fp;
-  #endif
+#ifdef ENABLE_FILEIO
+// functions defined elsehwere
+void cmd_Files( void );
 #endif
 
 ////////////////////
-
-// memory alignment
-//  necessary for some esp8266-based devices
-#ifdef ALIGN_MEMORY
-  // Align memory addess x to an even page
-  #define ALIGN_UP(x) ((unsigned char*)(((unsigned int)(x + 1) >> 1) << 1))
-  #define ALIGN_DOWN(x) ((unsigned char*)(((unsigned int)x >> 1) << 1))
-#else
-  #define ALIGN_UP(x) x
-  #define ALIGN_DOWN(x) x
-#endif
-
-
-////////////////////
-// various other desktop-tweaks and such.
 
 #ifndef boolean 
-  #define boolean int
-  #define true 1
-  #define false 0
+#define boolean int
+#define true 1
+#define false 0
+#endif
 #endif
 
 #ifndef byte
-  typedef unsigned char byte;
+typedef unsigned char byte;
 #endif
 
 // some catches for AVR based text string stuff...
 #ifndef PROGMEM
-  #define PROGMEM
+#define PROGMEM
 #endif
 #ifndef pgm_read_byte
-  #define pgm_read_byte( A ) *(A)
+#define pgm_read_byte( A ) *(A)
 #endif
 
 ////////////////////
 
 #ifdef ENABLE_FILEIO
-  // functions defined elsehwere
-  void cmd_Files( void );
-  unsigned char * filenameWord(void);
-  static boolean sd_is_initialized = false;
+unsigned char * filenameWord(void);
+static boolean sd_is_initialized = false;
 #endif
-
-// some settings based things
 
 boolean inhibitOutput = false;
 static boolean runAfterLoad = false;
@@ -819,11 +748,6 @@ void printline()
     list_line++;
   }
   list_line++;
-#ifdef ALIGN_MEMORY
-  // Start looking for next line on even page
-  if (ALIGN_UP(list_line) != list_line)
-    list_line++;
-#endif
   line_terminator();
 }
 
@@ -1037,6 +961,8 @@ static short int expression(void)
 /***************************************************************************/
 void loop()
 {
+  Serial.println("with MRETV composit video output"); 
+  Serial.println("Version beta 1.0"); 
   unsigned char *start;
   unsigned char *newEnd;
   unsigned char linelen;
@@ -1053,14 +979,8 @@ void loop()
   program_start = program;
   program_end = program_start;
   sp = program+sizeof(program);  // Needed for printnum
-#ifdef ALIGN_MEMORY
-  // Ensure these memory blocks start on even pages
-  stack_limit = ALIGN_DOWN(program+sizeof(program)-STACK_SIZE);
-  variables_begin = ALIGN_DOWN(stack_limit - 27*VAR_SIZE);
-#else
   stack_limit = program+sizeof(program)-STACK_SIZE;
   variables_begin = stack_limit - 27*VAR_SIZE;
-#endif
 
   // memory free
   printnum(variables_begin-program_end);
@@ -1128,24 +1048,6 @@ prompt:
 
   // Now we have the number, add the line header.
   txtpos -= 3;
-
-#ifdef ALIGN_MEMORY
-  // Line starts should always be on 16-bit pages
-  if (ALIGN_DOWN(txtpos) != txtpos)
-  {
-    txtpos--;
-    linelen++;
-    // As the start of the line has moved, the data should move as well
-    unsigned char *tomove;
-    tomove = txtpos + 3;
-    while (tomove < txtpos + linelen - 1)
-    {
-      *tomove = *(tomove + 1);
-      tomove++;
-    }
-  }
-#endif
-
   *((unsigned short *)txtpos) = linenum;
   txtpos[sizeof(LINENUM)] = linelen;
 
@@ -2058,6 +1960,9 @@ void setup()
   Serial.begin(kConsoleBaud);	// opens serial port
   while( !Serial ); // for Leonardo
   
+  keyboard.begin(DataPin, IRQpin); //----------------------------------------------------------------------------------------------------------------
+  //Serial.println("Keyboard Test:");
+  
   Serial.println( sentinel );
   printmsg(initmsg);
 
@@ -2147,8 +2052,22 @@ static int inchar()
   default:
     while(1)
     {
-      if(Serial.available())
-        return Serial.read();
+     
+     //----------- the following is the key modification -------------------------------------------------------------------------------------------------
+     //----------- where the code get the variables from the PS2 keyboard --------------------------------------------------------------------------------
+     //----------- and treat them as the ones from the PC keyboard ---------------------------------------------------------------------------------------
+ 
+     if (keyboard.available()) {
+       // read the next key
+       char c = keyboard.read();
+       //Serial.print(c);
+       return c; 
+     }
+     //------------ end of modification -------------------------------------------------------------------------------------------------------------------
+     
+     if(Serial.available())
+     return Serial.read(); 
+  
     }
   }
   
