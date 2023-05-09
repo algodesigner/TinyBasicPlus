@@ -1023,11 +1023,6 @@ static short int expression(void)
 /***************************************************************************/
 void loop()
 {
-  Serial.println("MRETV composite video output"); 
-  Serial.println("Version beta 1.0a"); 
-  Serial1.println("MRETV composite video output"); 
-  Serial1.println("Version beta 1.0a"); 
-
   unsigned char *start;
   unsigned char *newEnd;
   unsigned char linelen;
