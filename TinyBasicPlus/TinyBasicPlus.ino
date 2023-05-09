@@ -187,6 +187,10 @@ char eliminateCompileErrors = 1;  // fix to suppress arduino build errors
 #define ENABLE_EEPROM 1
 //#undef ENABLE_EEPROM
 
+// This turns on the PS/2 Keyboard support
+//#define ENABLE_PS2KEYBOARD 1
+#undef ENABLE_PS2KEYBOARD
+
 // Sometimes, we connect with a slower device as the console.
 // Set your console D0/D1 baud rate here (9600 baud default)
 //#define kConsoleBaud 9600
@@ -225,15 +229,13 @@ char eliminateCompileErrors = 1;  // fix to suppress arduino build errors
 int eepos = 0;
 #endif
 
-//---------------------------------------------------------------------------------------------------------------------------------------------------
+#ifdef ENABLE_PS2KEYBOARD
 #include <PS2Keyboard.h>
 const int DataPin = 8;
 const int IRQpin =  3;
 PS2Keyboard keyboard;
-//-------------------------------------------------------------------------------------------------------------------------------------------------------
-
+#endif
   
-
 #ifdef ENABLE_FILEIO
 #include <SD.h>
 #include <SPI.h> /* needed as of 1.5 beta */
@@ -2020,10 +2022,11 @@ void setup()
   Serial.begin(kConsoleBaud);	// opens serial port
   Serial1.begin(kConsoleBaud);
   while( !Serial ); // for Leonardo
-  
-  keyboard.begin(DataPin, IRQpin); //----------------------------------------------------------------------------------------------------------------
-  //Serial.println("Keyboard Test:");
-  
+
+#ifdef ENABLE_PS2KEYBOARD  
+  keyboard.begin(DataPin, IRQpin);
+#endif
+
   Serial.println( sentinel );
   Serial1.println(sentinel);
   printmsg(initmsg);
@@ -2114,21 +2117,18 @@ static int inchar()
   default:
     while(1)
     {
-     
-     //----------- the following is the key modification -------------------------------------------------------------------------------------------------
-     //----------- where the code get the variables from the PS2 keyboard --------------------------------------------------------------------------------
-     //----------- and treat them as the ones from the PC keyboard ---------------------------------------------------------------------------------------
- 
-     if (keyboard.available()) {
+ #ifdef ENABLE_PS2KEYBOARD
+       // Read a character from a PS/2 keyboard if the latter is available
+       if (keyboard.available()) {
        // read the next key
        char c = keyboard.read();
        //Serial.print(c);
        return c; 
      }
-     //------------ end of modification -------------------------------------------------------------------------------------------------------------------
+#endif
      
-     if(Serial.available())
-     return Serial.read(); 
+     if (Serial.available())
+       return Serial.read(); 
   
     }
   }
