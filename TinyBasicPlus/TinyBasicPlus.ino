@@ -61,6 +61,11 @@
 
 #define kVersion "v0.15a"
 
+// v0.15: 2018-06-23
+//      Integrating some contributions
+//      Corrected some of the #ifdef nesting atop this page
+//      Licensing issues beginning to be addressed
+//
 // v0.14: 2013-11-07
 //      Input command always set the variable to 99
 //      Modified Input command to accept an expression using getn()
