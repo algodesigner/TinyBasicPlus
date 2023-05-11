@@ -235,6 +235,10 @@ const int DataPin = 8;
 const int IRQpin =  3;
 PS2Keyboard keyboard;
 #endif
+
+#ifdef ENABLE_TONES
+#include <play.h>
+#endif
   
 #ifdef ENABLE_FILEIO
 #include <SD.h>
@@ -283,6 +287,10 @@ FILE * fp;
 #ifdef ENABLE_FILEIO
 // functions defined elsehwere
 void cmd_Files( void );
+#endif
+
+#ifdef ENABLE_TONES
+static void tonew(int, int);
 #endif
 
 ////////////////////
@@ -392,6 +400,7 @@ const static unsigned char keywords[] PROGMEM = {
   'T','O','N','E','W'+0x80,
   'T','O','N','E'+0x80,
   'N','O','T','O','N','E'+0x80,
+  'P','L','A','Y'+0x80,
 #endif
 #ifdef ARDUINO
 #ifdef ENABLE_EEPROM
@@ -426,7 +435,7 @@ enum {
   KW_RSEED,
   KW_CHAIN,
 #ifdef ENABLE_TONES
-  KW_TONEW, KW_TONE, KW_NOTONE,
+  KW_TONEW, KW_TONE, KW_NOTONE, KW_PLAY,
 #endif
 #ifdef ARDUINO
 #ifdef ENABLE_EEPROM
@@ -700,6 +709,34 @@ static unsigned char print_quoted_string(void)
   return 1;
 }
 
+#ifdef ENABLE_TONES
+/**
+ * Plays a quoted string provided in the PLAY command.
+ */
+static unsigned char play_quoted_string()
+{
+  unsigned char delim = *txtpos;
+  if (delim != '"' && delim != '\'')
+    return 0;
+  txtpos++;
+
+  // Check we have a closing delimiter
+  for (int i = 0; txtpos[i] != delim; i++) {
+    if (txtpos[i] == NL)
+      return 0;
+  }
+
+  // Play the characters
+  char *s = txtpos;
+  for (;*txtpos != delim; txtpos++);
+  // Temporarily replace the delimited with '\0'
+  *txtpos = 0;
+  play(s, tonew);
+  // Restore the last delimiter and skip over it
+  *txtpos++ = delim;
+  return 1;
+}
+#endif
 
 /***************************************************************************/
 void printmsgNoNL(const unsigned char *msg)
@@ -1325,6 +1362,8 @@ interperateAtTxtpos:
     goto tonegen;
   case KW_NOTONE:
     goto tonestop;
+  case KW_PLAY:
+    goto play;
 #endif
 
 #ifdef ARDUINO
@@ -1958,6 +1997,17 @@ tonegen:
     }
     goto run_next_statement;
   }
+
+play:
+  // If we have no argument, display an error
+  if (*txtpos == ':' )
+    goto qwhat;
+  if (*txtpos == NL)
+    goto execnextline;
+  if (!play_quoted_string())
+    goto qwhat;
+  goto run_next_statement;
+
 #endif /* ENABLE_TONES */
 }
 
@@ -2246,5 +2296,14 @@ void cmd_Files( void )
     entry.close();
   }
   dir.close();
+}
+#endif
+
+#ifdef ENABLE_TONES
+static void tonew(int freq, int duration)
+{
+//    printf("tonew: freq=%d, duration=%d\n", freq, duration);
+    tone(kPiezoPin, freq, duration);
+    delay(duration);  
 }
 #endif
