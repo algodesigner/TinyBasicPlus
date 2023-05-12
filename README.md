@@ -30,9 +30,10 @@ program.
 
 ## File IO/SD Card
 - FILES		- 	*lists the files on the SD card*
-- LOAD filename.bas	- *loads a file from the SD card*
-- CHAIN filename.bas - *equivalent of: new, load filename.bas, run*
-- SAVE filename.bas	- *saves the current program to the SD card, overwriting*
+- LOAD filename	- *loads a file from the SD card*
+- CHAIN filename - *equivalent of: new, load filename.bas, run*
+- SAVE filename	- *saves the current program to the SD card, overwriting*
+- KILL filename - *deletes the specified file* :new:
 
 ## EEProm - nonvolatile on-chip storage
 - EFORMAT	- clears the EEProm memory
@@ -74,13 +75,13 @@ program.
 
 NOTE: "PINMODE" command removed as of version 0.11
 
-## Sound - Piezo wired with red/+ on pin 5 and black/- to ground
-- TONE freq,timems - play "freq" for "timems" milleseconds (1000 = 1 second)
-- TONEW freq,timems - same as above, but also waits for it to finish
-- NOTONE - stop playback of all playing tones
+## Sound & Music - Piezo wired with red/+ on pin 5 and black/- to ground
+- TONE freq,timems - *plays "freq" for "timems" milleseconds (1000 = 1 second)*
+- TONEW freq,timems - *same as above, but also waits for it to finish*
+- NOTONE - *stops playback of all playing tones*
+- PLAY music_notes - *plays the specified music notes* :new:
 
 NOTE: TONE commands are by default disabled
-
 
 # Example programs
 
@@ -175,7 +176,7 @@ List both, and run
 - Arduino - ATMega 168 (~100 bytes available)
 - Arduino - ATMega 368 (~1100 bytes available)
 - Arduino Nano Every
-- SD cards (via SD Library, for FILES, LOAD, SAVE commands, uses 9k of ROM)
+- SD cards (via SD Library, for FILES, LOAD, SAVE, and KILL commands)
 - EEProm (via EEProm Library, uses 500 bytes of ROM)
 - Serial IO - command console
 - PS2 Keyboard for standalone use
