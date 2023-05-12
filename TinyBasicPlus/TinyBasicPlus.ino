@@ -717,7 +717,7 @@ static unsigned char print_quoted_string(void)
  */
 static unsigned char play_quoted_string()
 {
-  unsigned char delim = *txtpos;
+  const unsigned char delim = *txtpos;
   if (delim != '"' && delim != '\'')
     return 0;
   txtpos++;
@@ -733,10 +733,10 @@ static unsigned char play_quoted_string()
   for (;*txtpos != delim; txtpos++);
   // Temporarily replace the delimited with '\0'
   *txtpos = 0;
-  play(s, tonew);
+  const int errpos = play(s, tonew);
   // Restore the last delimiter and skip over it
   *txtpos++ = delim;
-  return 1;
+  return errpos < 0 ? 1 : 0;
 }
 #endif
 
