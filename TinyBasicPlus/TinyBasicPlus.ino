@@ -396,6 +396,7 @@ const static unsigned char keywords[] PROGMEM = {
   'E','N','D'+0x80,
   'R','S','E','E','D'+0x80,
   'C','H','A','I','N'+0x80,
+  'K','I','L','L'+0x80,
 #ifdef ENABLE_TONES
   'T','O','N','E','W'+0x80,
   'T','O','N','E'+0x80,
@@ -434,6 +435,7 @@ enum {
   KW_END,
   KW_RSEED,
   KW_CHAIN,
+  KW_KILL,
 #ifdef ENABLE_TONES
   KW_TONEW, KW_TONE, KW_NOTONE, KW_PLAY,
 #endif
@@ -1354,6 +1356,8 @@ interperateAtTxtpos:
 
   case KW_RSEED:
     goto rseed;
+  case KW_KILL:
+    goto kill;
 
 #ifdef ENABLE_TONES
   case KW_TONEW:
@@ -1896,8 +1900,6 @@ load:
   goto unimplemented;
 #endif // ENABLE_FILEIO
 
-
-
 save:
   // save from memory out to a file
 #ifdef ENABLE_FILEIO
@@ -1937,6 +1939,30 @@ save:
 #else // ENABLE_FILEIO
   goto unimplemented;
 #endif // ENABLE_FILEIO
+
+kill:
+  // Delete a file
+#ifdef ENABLE_FILEIO
+  {
+    unsigned char *filename;
+
+    // Work out the filename
+    expression_error = 0;
+    filename = filenameWord();
+    if (expression_error)
+      goto qwhat;
+
+#ifdef ARDUINO
+    if (SD.exists(filename))
+      SD.remove(filename);
+    else
+      printmsg (sdfilemsg);
+#endif // ARDUINO
+  }
+  goto warmstart;
+#else
+  goto unimplemented;
+#endif // ENABLE_FILEO
 
 rseed:
   {
