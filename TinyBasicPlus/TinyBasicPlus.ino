@@ -284,15 +284,6 @@ FILE * fp;
 #endif
 #endif
 
-#ifdef ENABLE_FILEIO
-// functions defined elsehwere
-void cmd_Files( void );
-#endif
-
-#ifdef ENABLE_TONES
-static void tonew(int, int);
-#endif
-
 ////////////////////
 
 #ifndef boolean 
@@ -316,7 +307,12 @@ typedef unsigned char byte;
 
 ////////////////////
 
+#ifdef ENABLE_TONES
+static void tonew(int, int);
+#endif
+
 #ifdef ENABLE_FILEIO
+void cmd_Files( void );
 unsigned char * filenameWord(void);
 static boolean sd_is_initialized = false;
 #endif
@@ -712,6 +708,7 @@ static unsigned char print_quoted_string(void)
 }
 
 #ifdef ENABLE_TONES
+#ifdef ARDUINO
 /**
  * Plays a quoted string provided in the PLAY command.
  */
@@ -729,7 +726,7 @@ static unsigned char play_quoted_string()
   }
 
   // Play the characters
-  char *s = txtpos;
+  char *s = (char *)txtpos;
   for (;*txtpos != delim; txtpos++);
   // Temporarily replace the delimited with '\0'
   *txtpos = 0;
@@ -738,7 +735,8 @@ static unsigned char play_quoted_string()
   *txtpos++ = delim;
   return errpos < 0 ? 1 : 0;
 }
-#endif
+#endif // ARDUINO
+#endif // ENABLE_TONES
 
 /***************************************************************************/
 void printmsgNoNL(const unsigned char *msg)
@@ -1984,7 +1982,9 @@ rseed:
 
 #ifdef ENABLE_TONES
 tonestop:
+#ifdef ARDUINO
   noTone( kPiezoPin );
+#endif
   goto run_next_statement;
 
 tonegen:
@@ -2016,11 +2016,13 @@ tonegen:
     if( freq == 0 || duration == 0 )
       goto tonestop;
 
+#ifdef ARDUINO
     tone( kPiezoPin, freq, duration );
     if( alsoWait ) {
       delay( duration );
       alsoWait = false;
     }
+#endif
     goto run_next_statement;
   }
 
@@ -2030,11 +2032,13 @@ play:
     goto qwhat;
   if (*txtpos == NL)
     goto execnextline;
+#ifdef ARDUINO
   if (!play_quoted_string())
     goto qwhat;
+#endif
   goto run_next_statement;
 
-#endif /* ENABLE_TONES */
+#endif // ENABLE_TONES
 }
 
 // returns 1 if the character is valid in a filename
@@ -2297,6 +2301,7 @@ void outstr(const char *s) {
 
 void cmd_Files( void )
 {
+#ifdef ARDUINO
   File dir = SD.open( "/" );
   dir.seek(0);
   for(;;) {
@@ -2322,14 +2327,17 @@ void cmd_Files( void )
     entry.close();
   }
   dir.close();
+#endif // ARDUINO
 }
-#endif
+#endif // ENABLE_FILEO
 
 #ifdef ENABLE_TONES
 static void tonew(int freq, int duration)
 {
 //    printf("tonew: freq=%d, duration=%d\n", freq, duration);
+#ifdef ARDUINO
     tone(kPiezoPin, freq, duration);
-    delay(duration);  
+    delay(duration);
+#endif  
 }
 #endif
